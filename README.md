@@ -40,12 +40,29 @@ This plan strikes the exact balance required for a **Senior/Research Engineer po
 
 *Building the "Car" that runs on the engine.*
 
-#### **2.1. The "Gray Code" Ansatz**
 
-* **Task:** Build the Parameterized Quantum Circuit (PQC).
-* **Action:** **CODE THE WIRING / USE LIBRARY FOR GATES.**
-* **Your Code:** You must define *which* qubits get entangled. A standard `RealAmplitudes` ansatz entangles neighbors (0-1, 1-2). In Gray Code, "neighbors" in energy might be qubits 0 and 2. You must write the function that places `CX` gates according to your Gray mapping.
-* **Library (Qiskit):** Use `QuantumCircuit`, `ParameterVector`, `Rx`, `Ry`, `Cz`.
+
+#### **2.1. The Hamiltonian Variational Ansatz (HVA)**
+
+* **The Concept:** Instead of random gates, you build the circuit by alternating "Kinetic Layers" and "Potential Layers" (Trotterization).
+* Layer 1: e^{-i H_{potential} \theta_1}
+* Layer 2: e^{-i H_{kinetic} \theta_2}
+
+
+* **Status:** **100% YOU (Logic) / 0% Library (Template)**
+* **THE TRAP (Why you can't use `qiskit.circuit.library.HamiltonianGate` blindly):**
+* If you just ask Qiskit to "exponentiate this giant matrix," it will generate a massive, inefficient circuit full of CNOTs that destroys the structure.
+* Qiskit *does* have an `HVA` class, but it is designed for standard models (Ising/Heisenberg). It does not know how to efficiently decompose your **Gray Code Kinetic Energy** operator.
+
+
+* **CODE THIS (Your "Novelty"):**
+* **The Potential Layer:** In grid basis, the potential V(x) is diagonal. This is easy: just a layer of R_z gates. You write the loop to place them.
+* **The Kinetic Layer (The Hard Part):** The kinetic energy operator in Gray Code is complex (it involves interactions between distant qubits). You must write the custom sub-circuit that implements e^{-i T \theta}.
+* *Note:* This proves you understand "Trotterization" and "Unitary Decomposition," which is a huge interview plus.
+
+* **USE LIBRARY:**
+* **`Parameter`:** Use Qiskit's parameter binding so you don't have to rebuild the circuit every optimization step.
+
 
 #### **2.2. Multigrid VQE Loop**
 
@@ -102,7 +119,10 @@ This plan strikes the exact balance required for a **Senior/Research Engineer po
 | Component | **CODE IT** (Your Brain) | **IMPORT IT** (The Tool) |
 | --- | --- | --- |
 | **Hamiltonian** | Sinc-DVR math, Gray Code logic, Matrix-to-Pauli conversion loop. | `SparsePauliOp`, `numpy` arrays. |
-| **Circuit** | Custom gate wiring (topology) for Gray Code neighbors. | `QuantumCircuit`, `Rx`, `Ry`, `CX` gates. |
+| Component | **CODE IT** (Your Brain) | **IMPORT IT** (The Tool) |
+| --- | --- | --- |
+| **HVA Ansatz** | **The Trotter Decomposition.** You manually build the layers: "Rotate Z for Potential, Rotate Custom-Basis for Kinetic." | `QuantumCircuit`, `Rz`, `Rxx` (if needed), `Parameter`. |
+
 | **VQE (Ground)** | The "Multigrid" loop (resizing parameters). | `Estimator` (simulator), `scipy.optimize`. |
 | **VQD (Algo A)** | The "Penalty" cost function loop. | `Sampler` (for overlap calc). |
 | **SSVQE (Algo B)** | The "Weighted Sum" cost function. | `Estimator`, `Optimizer`. |
