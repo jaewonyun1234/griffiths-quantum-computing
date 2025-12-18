@@ -1,8 +1,4 @@
-This is the final, definitive blueprint. Print this out or save it as your `README.md`.
 
-This plan strikes the exact balance required for a **Senior/Research Engineer portfolio**: You use libraries for the heavy math (matrices, gradients) but write the custom logic (physics, control loops) that standard libraries cannot handle.
-
----
 
 # **Project Master Plan: Spectral Solvers for Continuous Variables**
 
