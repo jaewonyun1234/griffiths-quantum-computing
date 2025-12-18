@@ -1,3 +1,5 @@
+
+
 # **Project Master Plan: Spectral Solvers for Continuous Variables**
 
 **Goal:** Benchmark three quantum algorithms (VQE/VQD, SSVQE, qEOM) on a particle in a well, using a custom **Sinc-DVR** discretization and **Gray Code** encoding to minimize noise.
@@ -88,8 +90,9 @@
 | Component | **CODE IT** (Your Brain/Novelty) | **IMPORT IT** (The Tool/Plumbing) |
 | --- | --- | --- |
 | **Hamiltonian** | Sinc-DVR math, Gray Code mapping, Decomposition loop. | `SparsePauliOp`, `numpy`. |
-| **HVA Ansatz** | Manual Trotter layers (e^{-iV} and e^{-iT}) for Gray Code. | `QuantumCircuit`, `Rz`, `Parameter`. |
+| **HVA Ansatz** | Manual Trotter layers (e^{-iV} and e^{-iT}) for Gray Code. | `QuantumCircuit`, R_z, `Parameter`. |
 | **VQE (Ground)** | The "Multigrid" loop (resizing parameters). | `Estimator`, `scipy.optimize`. |
 | **VQD (Algo A)** | The "Penalty" cost function and deflation loop. | `Sampler` (for overlap calc). |
 | **SSVQE (Algo B)** | The "Weighted Sum" cost function. | `Estimator`, `Optimizer`. |
 | **qEOM (Algo C)** | The Operator Pool and Commutator construction. | `numpy.linalg.eig`. |
+
