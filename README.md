@@ -1,94 +1,115 @@
-# **Project Master Plan: Spectral Solvers for Continuous Variables**
+Here is your fully revised, "Hiring Manager Proof" Master Plan.
 
-**Goal:** Benchmark three quantum algorithms (VQE/VQD, SSVQE, qEOM) on a particle in a well, using a custom **Sinc-DVR** discretization and **Gray Code** encoding to minimize noise.
-
----
-
-### **Week 1: The "Physics Engine" (The Core Novelty)**
-
-*This is the most unique part of your project. Qiskit cannot do this.*
-
-#### **1.1. Sinc-DVR Matrix Generator**
-
-* **Task:** Create the $N \times N$ matrices for Kinetic Energy ($T$) and Potential Energy ($V$).
-* **Action:** **CODE FROM SCRATCH.**
-* **Why?** Qiskit has no `SincDVR` class. You must implement the specific mathematical formula: 
-  $$T_{ij} = \frac{\hbar^2}{2m \Delta x^2} \dots$$
-* **Library Support:** Use `numpy` for creating the arrays.
-
-#### **1.2. Gray Code Transformer**
-
-* **Task:** Create a mapping function `index_to_gray(i)` that converts integer `2` to bitstring `011` (instead of binary `010`).
-* **Action:** **CODE FROM SCRATCH.**
-* **Why?** Standard computer science libraries use Binary. You need Gray Code to ensure adjacent grid points only differ by 1 bit flip (physics requirement).
-
-#### **1.3. Hamiltonian to Pauli Converter**
-
-* **Task:** Convert your $N \times N$ matrix into a string of Pauli operators (e.g., $0.5 \times XII + 0.1 \times ZZI$).
-* **Action:** **CODE THE LOGIC / USE LIBRARY FOR STORAGE.**
-* **Your Code:** Write the loop that iterates through your matrix, applies the Pauli decomposition formula, and outputs coefficients and strings.
-* **Library (Qiskit):** Once you have the strings, load them into `qiskit.quantum_info.SparsePauliOp`.
+I have integrated the **HVA Truncation**, the **HEA Comparison**, and the **Noise Benchmarking** into a rigorous engineering roadmap. You can save this directly as `README.md` or `project_plan.md`.
 
 ---
 
-### **Week 2: The Circuit & VQE Baseline**
+# **Project Master Plan: Benchmarking Quantum Encodings & Ansatz Strategies for Continuous Variables**
 
-*Building the "Car" that runs on the engine.*
+**Objective:** Investigate the trade-offs between **Accuracy** (Sinc-DVR basis) and **Circuit Depth** (Noise Resilience) by benchmarking **Gray Code** vs. **Binary** encodings and **Physics-Informed** vs. **Hardware-Efficient** ansätze.
 
-#### **2.1. The Hamiltonian Variational Ansatz (HVA)**
-
-* **The Concept:** Instead of random gates, you build the circuit by alternating "Kinetic Layers" and "Potential Layers" (Trotterization).
-* **Layer 1:** $e^{-i H_{potential} \theta_1}$
-* **Layer 2:** $e^{-i H_{kinetic} \theta_2}$
-* **Status:** **100% YOU (Logic) / 0% Library (Template)**
-* **CODE THIS:**
-    * **The Potential Layer:** In grid basis, the potential $V(x)$ is diagonal. Use a layer of $R_z$ gates.
-    * **The Kinetic Layer (The Hard Part):** The kinetic energy operator in Gray Code is complex. You must write the custom sub-circuit that implements $e^{-i T \theta}$.
-* **USE LIBRARY:** Use Qiskit's `ParameterVector` to handle the $\theta$ values.
-
-#### **2.2. Multigrid VQE Loop**
-
-* **Task:** Solve for the Ground State by starting with 2 qubits, optimizing, then upscaling to 3.
-* **Action:** **CODE FROM SCRATCH.**
-* **Why?** Qiskit has no concept of "resizing" a problem. You must write the Python loop that extracts parameters from the 2-qubit result and maps them to the 3-qubit ansatz.
-* **Library (Qiskit/Scipy):** Use `Estimator` for energy and `scipy.optimize.minimize` for the optimization.
+**Target System:** 1D Particle in a Double Well Potential (Tunneling Analysis).
 
 ---
 
-### **Week 3: The Solvers (The Benchmark)**
+### **Week 1: The "Physics Engine" & Hamiltonian Engineering**
 
-#### **3.1. Algorithm A: VQD (Variational Quantum Deflation)**
+*Goal: Build the control group and the experimental group Hamiltonians.*
 
-* **Task:** Find the 1st and 2nd excited states by penalizing overlap with the ground state.
-* **Action:** **CODE THE LOOP.**
-* **Your Code:** Write the cost function: 
-  $$Cost = E(\theta) + \beta |\langle \psi_0 | \psi(\theta) \rangle|^2$$
-* **Library:** Use Qiskit's `Sampler` or `ComputeUncompute` primitive to calculate the overlap $|\langle \psi_0 | \psi(\theta) \rangle|^2$.
+#### **1.1. Sinc-DVR Matrix Generator (The "Exact" Operator)**
 
-#### **3.2. Algorithm B: SSVQE (Subspace Search VQE)**
+* **Task:** Implement the Sinc-DVR Kinetic (T) and Potential (V) matrices.
+* **The Math:**
+* Potential: V_{ij} = \delta_{ij} V(x_i) (Diagonal).
+* Kinetic (Dense): 
 
-* **Task:** Find all states simultaneously using orthogonal input states (e.g., $|00\rangle, |01\rangle$).
+
+
 * **Action:** **CODE FROM SCRATCH.**
-* **Your Code:** Write a cost function that sums the energies: 
-  $$Cost = w_0 \langle \psi_{00}|H|\psi_{00} \rangle + w_1 \langle \psi_{01}|H|\psi_{01} \rangle$$
+* **The Twist:** Implement a **Double Well Potential** (V(x) = ax^4 - bx^2) to study tunneling splitting, which is harder than a simple square well.
 
-#### **3.3. Algorithm C: Custom qEOM (Quantum Equation of Motion)**
+#### **1.2. The "Truncator" (The Circuit Optimizer)**
 
-* **Task:** Calculate excited states by solving the generalized eigenvalue problem on the operator pool.
-* **Your Code:**
-    1. **Operator Pool:** Define the operators (e.g., $X, Y, Z$ on specific qubits) representing "momentum kicks."
-    2. **Commutator Logic:** Calculate the double commutators $[H, [H, O_\mu]]$ for the qEOM matrices.
-* **Library (NumPy):** Use `numpy.linalg.eig` to solve the final system.
+* **The Problem:** The T matrix is dense (all-to-all connectivity). Implementing e^{-iT\theta} exactly requires O(N^2) gates, which is too deep for NISQ.
+* **The Solution:** Create a function `truncate_hamiltonian(matrix, threshold)` that filters out long-range Kinetic interactions (where |i-j| > 1).
+* **Use Case:** You will use the **Full Matrix** for energy measurement (Accuracy), but the **Truncated Matrix** for constructing the HVA Circuit (Speed).
+
+#### **1.3. Encoding Manager (The A/B Test)**
+
+* **Task:** Create a class that converts the N \times N matrix into Pauli Strings using two methods:
+1. **Standard Binary** (Control Group): 0 \to 00, 1 \to 01, 2 \to 10, 3 \to 11.
+2. **Gray Code** (Experimental Group): 0 \to 00, 1 \to 01, 2 \to 11, 3 \to 10.
+
+
+* **Hypothesis:** Gray Code should minimize the Hamming weight of the truncated Kinetic operator, reducing the number of CNOTs required for nearest-neighbor interactions.
 
 ---
 
-### **Summary Table**
+### **Week 2: The "Ansatz Battle" (Circuit Architecture)**
 
-| Component | **CODE IT** (Your Brain/Novelty) | **IMPORT IT** (The Tool/Plumbing) |
-| :--- | :--- | :--- |
-| **Hamiltonian** | Sinc-DVR math, Gray Code mapping, Decomposition loop. | `SparsePauliOp`, `numpy`. |
-| **HVA Ansatz** | Manual Trotter layers ($e^{-iV}$ and $e^{-iT}$) for Gray Code. | `QuantumCircuit`, $R_z$, `Parameter`. |
-| **VQE (Ground)** | The "Multigrid" loop (resizing parameters). | `Estimator`, `scipy.optimize`. |
-| **VQD (Algo A)** | The "Penalty" cost function and deflation loop. | `Sampler` (for overlap calc). |
-| **SSVQE (Algo B)** | The "Weighted Sum" cost function. | `Estimator`, `Optimizer`. |
-| **qEOM (Algo C)** | The Operator Pool and Commutator construction. | `numpy.linalg.eig`. |
+*Goal: Compare "Compression" (HEA) vs. "Physics" (HVA).*
+
+#### **2.1. Strategy A: The Hardware Efficient Ansatz (HEA)**
+
+* **Concept:** "Compress & Solve." Use Sinc-DVR to fit the problem on minimal qubits (e.g., 4-5), then use a generic, shallow circuit.
+* **Implementation:** Use Qiskit’s `EfficientSU2` (Ry + CNOTs).
+* **Pros:** Guaranteed to be shallow; immune to the "Dense Matrix" problem.
+* **Cons:** Prone to "Barren Plateaus" (trains slowly); ignores the physics of the well.
+
+#### **2.2. Strategy B: The Truncated Hamiltonian Variational Ansatz (HVA)**
+
+* **Concept:** "Physics-Informed." Build the circuit layers based on the **Truncated** Kinetic Energy operator (Nearest-Neighbor only).
+* **Layer Construction:**
+* 
+
+
+* **Implementation:** **CODE FROM SCRATCH.** You must manually map the Pauli terms of the truncated operator to quantum gates.
+* **Pros:** Should train faster (fewer parameters); Gray Code makes the neighbor interactions local (fewer SWAPs).
+* **Cons:** Circuit depth depends on how well you truncate.
+
+#### **2.3. Depth Profiling**
+
+* **Task:** Before training, transpile both ansätze (HEA vs. HVA) to a target backend (e.g., `FakeTorino`).
+* **Metric:** Log the **CNOT count** and **Circuit Depth** for both strategies.
+
+---
+
+### **Week 3: The Benchmarks (Noise & Solvers)**
+
+*Goal: Stress-test the methods under realistic conditions.*
+
+#### **3.1. The "Noise Torture Chamber"**
+
+* **Action:** Run VQE for both strategies on a **Noisy Simulator** (using `FakeProvider` or `AerSimulator` with a depolarization channel).
+* **The Experiment:**
+* **X-Axis:** Noise Rate (increase error probability).
+* **Y-Axis:** Energy Error (distance from exact eigenvalue).
+* **Success Metric:** Does Gray Code + HVA degrade *slower* than Binary + HEA?
+
+
+
+#### **3.2. Excited States via qEOM**
+
+* **Task:** Once the Ground State is found (using the best ansatz from 3.1), apply the **Quantum Equation of Motion (qEOM)**.
+* **Goal:** Extract the **Tunneling Splitting** (Energy difference between Ground and 1st Excited state).
+* **Why qEOM?** It avoids re-training the ansatz (unlike VQD), which saves expensive QPU time.
+
+---
+
+### **Summary of Comparisons**
+
+| Component | Control Group (Baseline) | Experimental Group (Your Innovation) |
+| --- | --- | --- |
+| **Discretization** | Finite Difference (Algebraic) | **Sinc-DVR** (Exponential Convergence) |
+| **Encoding** | Standard Binary | **Gray Code** (Hamming Locality) |
+| **Ansatz** | HEA (`EfficientSU2`) | **Truncated HVA** (Local-only Physics) |
+| **Hamiltonian** | Exact (Dense) | **Truncated** (Sparse for Circuit Generation) |
+
+---
+
+### **Tech Stack**
+
+* **Linear Algebra:** `numpy` (Matrix generation, Eigensolvers for validation).
+* **Quantum SDK:** `Qiskit` (Circuit building, `SparsePauliOp`).
+* **Optimization:** `scipy.optimize` (COBYLA/L-BFGS-B).
+* **Noise Models:** `qiskit_aer` (Depolarizing error, Readout error).
